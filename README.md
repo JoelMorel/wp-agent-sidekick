@@ -1,21 +1,18 @@
-# WP Agent Sidekick 🦸‍♂️🤖
+# WP Agent Sidekick
 
-A lightweight, modern, standalone AI Agent & Assistant for WordPress. **No external Vercel server or coding required.**
-
+A lightweight, modern, standalone AI Agent & Assistant for WordPress.
 Works out of the box with **Google Gemini (free tier)**, **OpenAI (ChatGPT)**, **Groq**, or your own **n8n Webhook workflow**.
 
 ---
 
 ## 🚀 Quick Install (Under 2 Minutes)
 
-1. Download [`wp-ai-chatbot.zip`](file:///Users/joelmorel/Web%20Projects/WP-Plugin_Chat/wp-ai-chatbot.zip).
+1. Download [`wp-ai-chatbot.zip`].
 2. Go to your WordPress Admin dashboard: **Plugins → Add New Plugin → Upload Plugin**.
 3. Select `wp-ai-chatbot.zip` and click **Install Now**, then **Activate**.
 4. Click **Agent Sidekick** in your WordPress Admin sidebar (or view the glance widget on your main Dashboard).
 5. Paste your API Key (e.g., Google Gemini or OpenAI) or your n8n Webhook URL.
 6. Click **Save Settings**.
-
-Your Agent Sidekick is now live on your site!
 
 ---
 
