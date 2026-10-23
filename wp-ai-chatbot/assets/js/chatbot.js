@@ -12,6 +12,9 @@
 
     var config = window.wpAiChatbotConfig || {};
     var apiUrl = config.apiUrl || '/wp-json/wp-ai-chatbot/v1/chat';
+    var addToCartUrl = config.addToCartUrl || '/wp-json/wp-ai-chatbot/v1/add-to-cart';
+    var cartUrl = config.cartUrl || '';
+    var checkoutUrl = config.checkoutUrl || '';
     var nonce = config.nonce || '';
     var botTitle = config.botTitle || 'Agent Sidekick';
     var welcomeMsg = config.welcomeMessage || 'Hello! How can I assist you today?';
@@ -266,6 +269,16 @@
                 if (result.data.handoff && result.data.handoff.enabled && result.data.handoff.url) {
                     appendHandoffCard(container, result.data.handoff);
                 }
+
+                // If Order Tracking WISMO data is returned
+                if (result.data.order_tracking) {
+                    appendOrderTrackingCard(container, result.data.order_tracking);
+                }
+
+                // If Rich Product Cards are returned
+                if (result.data.products && result.data.products.length > 0) {
+                    appendProductCards(container, result.data.products);
+                }
             } else {
                 var errorText = (result.data && result.data.message) ? result.data.message : 'Sorry, something went wrong. Please try again.';
                 showError(container, errorText);
@@ -325,6 +338,175 @@
                 <svg viewBox="0 0 24 24" class="wp-ai-handoff-arrow"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
         `;
+        row.appendChild(card);
+        container.appendChild(row);
+    }
+
+    function appendProductCards(container, products) {
+        var row = document.createElement('div');
+        row.className = 'wp-ai-message-row wp-ai-row-assistant wp-ai-products-row';
+
+        var botAvatar = document.createElement('div');
+        botAvatar.className = 'wp-ai-msg-avatar';
+        botAvatar.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5 2.5 2.5 0 0 0 7.5 18 2.5 2.5 0 0 0 10 15.5 2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5z"/></svg>`;
+        row.appendChild(botAvatar);
+
+        var wrap = document.createElement('div');
+        wrap.className = 'wp-ai-products-container';
+        wrap.innerHTML = `<div class="wp-ai-products-header">🛍️ <span>Recommended for you</span></div>`;
+
+        var list = document.createElement('div');
+        list.className = 'wp-ai-products-list';
+
+        products.forEach(function (p) {
+            var card = document.createElement('div');
+            card.className = 'wp-ai-product-card';
+
+            var imgHtml = p.image ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" class="wp-ai-product-thumb" loading="lazy" />` : '<div class="wp-ai-product-thumb-placeholder">📦</div>';
+
+            var starsHtml = '';
+            if (p.rating && p.rating > 0) {
+                starsHtml = `<span class="wp-ai-product-rating">★ ${p.rating.toFixed(1)}</span>`;
+            }
+
+            var actionBtnHtml = '';
+            if (p.is_purchasable && p.type === 'simple') {
+                actionBtnHtml = `<button type="button" class="wp-ai-btn-add-cart" data-product-id="${p.id}">
+                    <span class="wp-ai-cart-btn-text">+ Add to Cart</span>
+                </button>`;
+            } else {
+                actionBtnHtml = `<a href="${escapeHtml(p.permalink)}" class="wp-ai-btn-view-product" target="_blank" rel="noopener">View Details ➔</a>`;
+            }
+
+            card.innerHTML = `
+                <div class="wp-ai-product-main">
+                    ${imgHtml}
+                    <div class="wp-ai-product-info">
+                        <a href="${escapeHtml(p.permalink)}" class="wp-ai-product-name" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>
+                        <div class="wp-ai-product-pricing">
+                            <span class="wp-ai-product-price">${p.price}</span>
+                            ${starsHtml}
+                        </div>
+                        <span class="wp-ai-product-stock ${p.in_stock ? 'wp-ai-in-stock' : 'wp-ai-out-stock'}">${escapeHtml(p.stock_badge)}</span>
+                    </div>
+                </div>
+                <div class="wp-ai-product-footer">
+                    ${actionBtnHtml}
+                </div>
+            `;
+
+            var addBtn = card.querySelector('.wp-ai-btn-add-cart');
+            if (addBtn) {
+                addBtn.addEventListener('click', function () {
+                    handleAddToCartClick(addBtn, p.id);
+                });
+            }
+
+            list.appendChild(card);
+        });
+
+        wrap.appendChild(list);
+        row.appendChild(wrap);
+        container.appendChild(row);
+    }
+
+    function handleAddToCartClick(btn, productId) {
+        btn.disabled = true;
+        var btnText = btn.querySelector('.wp-ai-cart-btn-text');
+        var originalText = btnText ? btnText.textContent : '+ Add to Cart';
+        if (btnText) btnText.textContent = 'Adding...';
+
+        fetch(addToCartUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': nonce
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            btn.disabled = false;
+            if (data.success) {
+                btn.classList.add('wp-ai-btn-added');
+                var cUrl = data.cart_url || cartUrl || '/cart';
+                btn.innerHTML = `<a href="${cUrl}" class="wp-ai-cart-success-link" target="_blank">✓ Added! View Cart ➔</a>`;
+
+                // If jQuery and WooCommerce fragments exist, trigger standard update
+                if (window.jQuery && window.jQuery(document.body)) {
+                    window.jQuery(document.body).trigger('wc_fragment_refresh');
+                    window.jQuery(document.body).trigger('added_to_cart');
+                }
+            } else {
+                if (btnText) btnText.textContent = originalText;
+                alert(data.message || 'Could not add to cart.');
+            }
+        })
+        .catch(function () {
+            btn.disabled = false;
+            if (btnText) btnText.textContent = originalText;
+        });
+    }
+
+    function appendOrderTrackingCard(container, tracking) {
+        var row = document.createElement('div');
+        row.className = 'wp-ai-message-row wp-ai-row-assistant wp-ai-order-row';
+
+        var botAvatar = document.createElement('div');
+        botAvatar.className = 'wp-ai-msg-avatar';
+        botAvatar.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5 2.5 2.5 0 0 0 7.5 18 2.5 2.5 0 0 0 10 15.5 2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5z"/></svg>`;
+        row.appendChild(botAvatar);
+
+        var card = document.createElement('div');
+        card.className = 'wp-ai-order-card';
+
+        var badgeClass = 'wp-ai-order-badge-' + (tracking.status || 'processing');
+
+        var stepsHtml = '';
+        if (tracking.steps && tracking.steps.length > 0) {
+            stepsHtml = '<div class="wp-ai-stepper">';
+            tracking.steps.forEach(function (s, index) {
+                var isCompleted = s.state === 'completed';
+                var iconHtml = isCompleted ? '✓' : (index + 1);
+
+                stepsHtml += `
+                    <div class="wp-ai-step-node wp-ai-step-${s.state}">
+                        <div class="wp-ai-step-circle">${iconHtml}</div>
+                        <div class="wp-ai-step-label">${escapeHtml(s.label)}</div>
+                        ${s.date ? `<div class="wp-ai-step-date">${escapeHtml(s.date)}</div>` : ''}
+                    </div>
+                `;
+            });
+            stepsHtml += '</div>';
+        }
+
+        var trackBtnHtml = '';
+        if (tracking.tracking_url) {
+            trackBtnHtml = `<a href="${escapeHtml(tracking.tracking_url)}" target="_blank" rel="noopener noreferrer" class="wp-ai-order-track-btn">
+                🚚 Track Package (${escapeHtml(tracking.carrier || 'Carrier')}) ➔
+            </a>`;
+        }
+
+        card.innerHTML = `
+            <div class="wp-ai-order-header">
+                <div class="wp-ai-order-title">
+                    <span class="wp-ai-order-box-icon">📦</span>
+                    <strong>Order #${tracking.order_id}</strong>
+                </div>
+                <span class="wp-ai-order-status-badge ${badgeClass}">${escapeHtml(tracking.status_label)}</span>
+            </div>
+            <div class="wp-ai-order-submeta">
+                <span>Total: <strong>${tracking.total}</strong> (${tracking.item_count} items)</span>
+                <span>${escapeHtml(tracking.date_created)}</span>
+            </div>
+            ${stepsHtml}
+            ${trackBtnHtml}
+            ${tracking.view_url ? `<a href="${escapeHtml(tracking.view_url)}" target="_blank" class="wp-ai-order-receipt-link">View Full Order Receipt</a>` : ''}
+        `;
+
         row.appendChild(card);
         container.appendChild(row);
     }

@@ -3,7 +3,7 @@
  * Plugin Name:       WP Agent Sidekick
  * Plugin URI:        https://morelmedia.org
  * Description:       Lightweight, standalone AI Agent & Assistant for WordPress. Connects directly to Google Gemini, OpenAI, Groq, or an n8n webhook—no external server required.
- * Version:           1.5.0
+ * Version:           1.6.0
  * Author:            Morel Media
  * Author URI:        https://morelmedia.org
  * License:           GPL-2.0+
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WP_AI_CHATBOT_VERSION', '1.5.0');
+define('WP_AI_CHATBOT_VERSION', '1.6.0');
 define('WP_AI_CHATBOT_FILE', __FILE__);
 define('WP_AI_CHATBOT_PATH', plugin_dir_path(__FILE__));
 define('WP_AI_CHATBOT_URL', plugin_dir_url(__FILE__));
@@ -114,6 +114,10 @@ class WP_AI_Chatbot {
         // Localize script with backend configuration
         wp_localize_script('wp-ai-chatbot-js', 'wpAiChatbotConfig', [
             'apiUrl'         => esc_url_raw(rest_url('wp-ai-chatbot/v1/chat')),
+            'addToCartUrl'   => esc_url_raw(rest_url('wp-ai-chatbot/v1/add-to-cart')),
+            'cartUrl'        => function_exists('wc_get_cart_url') ? esc_url(wc_get_cart_url()) : '',
+            'checkoutUrl'    => function_exists('wc_get_checkout_url') ? esc_url(wc_get_checkout_url()) : '',
+            'hasWooCommerce' => class_exists('WooCommerce'),
             'nonce'          => wp_create_nonce('wp_rest'),
             'botTitle'       => esc_html($settings['bot_title']),
             'welcomeMessage' => esc_html($settings['welcome_message']),
@@ -139,6 +143,10 @@ class WP_AI_Chatbot {
 
         wp_localize_script('wp-ai-chatbot-js', 'wpAiChatbotConfig', [
             'apiUrl'         => esc_url_raw(rest_url('wp-ai-chatbot/v1/chat')),
+            'addToCartUrl'   => esc_url_raw(rest_url('wp-ai-chatbot/v1/add-to-cart')),
+            'cartUrl'        => function_exists('wc_get_cart_url') ? esc_url(wc_get_cart_url()) : '',
+            'checkoutUrl'    => function_exists('wc_get_checkout_url') ? esc_url(wc_get_checkout_url()) : '',
+            'hasWooCommerce' => class_exists('WooCommerce'),
             'nonce'          => wp_create_nonce('wp_rest'),
             'botTitle'       => esc_html($settings['bot_title']),
             'welcomeMessage' => esc_html($settings['welcome_message']),

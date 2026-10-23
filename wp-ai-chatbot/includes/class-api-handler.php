@@ -75,6 +75,25 @@ class WP_AI_Chatbot_API_Handler {
                 return current_user_can('manage_options');
             },
         ]);
+
+        register_rest_route(self::NAMESPACE, '/add-to-cart', [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => [$this, 'handle_add_to_cart'],
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'product_id' => [
+                    'required'          => true,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'quantity'   => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'default'           => 1,
+                    'sanitize_callback' => 'absint',
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -143,9 +162,11 @@ class WP_AI_Chatbot_API_Handler {
             }
 
             return rest_ensure_response([
-                'success' => true,
-                'reply'   => $reply,
-                'handoff' => $handoff_payload,
+                'success'        => true,
+                'reply'          => $reply,
+                'handoff'        => $handoff_payload,
+                'products'       => $result['products'] ?? [],
+                'order_tracking' => $result['order_tracking'] ?? null,
             ]);
         } catch (Exception $e) {
             return new WP_Error('ai_service_error', $e->getMessage(), ['status' => 500]);
@@ -388,5 +409,50 @@ class WP_AI_Chatbot_API_Handler {
         }
 
         return '127.0.0.1';
+    }
+
+    /**
+     * Handle 1-click AJAX Add to Cart for WooCommerce (DigitalGenius style)
+     */
+    public function handle_add_to_cart(WP_REST_Request $request) {
+        if (!class_exists('WooCommerce') || !function_exists('WC')) {
+            return new WP_Error('wc_unavailable', __('WooCommerce is not active on this site.', 'wp-ai-chatbot'), ['status' => 400]);
+        }
+
+        $product_id = absint($request->get_param('product_id'));
+        $quantity = max(1, absint($request->get_param('quantity') ?? 1));
+
+        if (empty($product_id)) {
+            return new WP_Error('invalid_product', __('Invalid product ID.', 'wp-ai-chatbot'), ['status' => 400]);
+        }
+
+        // Initialize session, customer, and cart if not set (REST context)
+        if (null === WC()->session) {
+            $session_class = apply_filters('woocommerce_session_handler', 'WC_Session_Handler');
+            WC()->session = new $session_class();
+            WC()->session->init();
+        }
+        if (null === WC()->customer) {
+            WC()->customer = new WC_Customer(get_current_user_id(), true);
+        }
+        if (null === WC()->cart) {
+            WC()->cart = new WC_Cart();
+        }
+
+        $cart_item_key = WC()->cart->add_to_cart($product_id, $quantity);
+
+        if ($cart_item_key) {
+            return rest_ensure_response([
+                'success'      => true,
+                'product_id'   => $product_id,
+                'cart_count'   => WC()->cart->get_cart_contents_count(),
+                'cart_total'   => html_entity_decode(wp_strip_all_tags(WC()->cart->get_cart_total())),
+                'cart_url'     => wc_get_cart_url(),
+                'checkout_url' => wc_get_checkout_url(),
+                'message'      => __('Added to cart!', 'wp-ai-chatbot'),
+            ]);
+        } else {
+            return new WP_Error('add_failed', __('Could not add this product to cart. Please check available options.', 'wp-ai-chatbot'), ['status' => 400]);
+        }
     }
 }

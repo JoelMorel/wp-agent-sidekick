@@ -36,7 +36,9 @@ class WP_AI_Chatbot_LLM_Service {
             'enable_lead_capture'     => 1,
             'lead_notification_email' => get_option('admin_email'),
             'enable_wc_order_lookup'  => 1,
+            'enable_wc_order_stepper' => 1,
             'enable_wc_product_search'=> 1,
+            'enable_wc_rich_cards'    => 1,
             'enable_human_handoff'    => 1,
             'handoff_channel'         => 'calendly',
             'handoff_target'          => '',
@@ -87,15 +89,25 @@ class WP_AI_Chatbot_LLM_Service {
             }
         }
 
-        // 4. WooCommerce Order Status Lookup (E-Commerce)
+        // 4. WooCommerce Order Status Lookup & Tracking (E-Commerce)
         if (!empty($this->settings['enable_wc_order_lookup']) && function_exists('wc_get_order') && !empty($message)) {
             $order_context = $this->check_wc_order($message);
             if (!empty($order_context)) {
                 $prompt .= "\n\n--- WOOCOMMERCE ORDER LOOKUP RESULT ---\n";
                 $prompt .= $order_context . "\n";
-                $prompt .= "Politely communicate this order status to the customer. For e-commerce orders, remind them of standard fulfillment and shipping timelines.\n";
+                $prompt .= "Politely communicate this order status to the customer. Note: A live visual shipping timeline card is automatically rendered below your response, so reassure them and mention the progress card below.\n";
                 $prompt .= "--------------------------------------";
             }
+        }
+
+        // 5. DigitalGenius-Style Returns & E-Commerce Care
+        if (!empty($this->settings['enable_wc_order_lookup'])) {
+            $prompt .= "\n\n--- RETURNS & EXCHANGES POLICY INSTRUCTIONS ---\n";
+            $prompt .= "If the customer asks how to return an item, request a refund, exchange a size, or report a damaged shipment:\n";
+            $prompt .= "1. Warmly empathize with their situation.\n";
+            $prompt .= "2. Ask for their Order Number and specific item/issue if not provided.\n";
+            $prompt .= "3. If they require immediate human escalation, end with [HUMAN_HANDOFF].\n";
+            $prompt .= "-----------------------------------------------";
         }
 
         // 5. Agency Lead Capture Guidelines
@@ -257,6 +269,162 @@ class WP_AI_Chatbot_LLM_Service {
     }
 
     /**
+     * Retrieve structured product data for interactive e-commerce product cards (DigitalGenius style)
+     *
+     * @param string $message
+     * @param int $limit
+     * @return array
+     */
+    public function get_matching_products($message, $limit = 3) {
+        if (!function_exists('wc_get_products') || empty($this->settings['enable_wc_product_search']) || empty($this->settings['enable_wc_rich_cards'])) {
+            return [];
+        }
+
+        $stopwords = ['hello', 'hi', 'hey', 'please', 'can', 'you', 'help', 'me', 'with', 'what', 'where', 'when', 'how', 'is', 'are', 'the', 'a', 'an', 'i', 'want', 'to', 'know', 'tell', 'about', 'recommend', 'show', 'looking', 'for', 'buy', 'purchase', 'product', 'products', 'items', 'item'];
+        $words = preg_split('/\s+/', strtolower($message));
+        $keywords = array_diff($words, $stopwords);
+        $search_term = !empty($keywords) ? implode(' ', array_slice($keywords, 0, 4)) : '';
+
+        if (empty($search_term)) {
+            return [];
+        }
+
+        $products = wc_get_products([
+            'status'     => 'publish',
+            'limit'      => $limit,
+            's'          => $search_term,
+            'visibility' => 'catalog',
+        ]);
+
+        if (empty($products)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($products as $p) {
+            $image_id = $p->get_image_id();
+            $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : (function_exists('wc_placeholder_img_src') ? wc_placeholder_img_src() : '');
+            $price_clean = wp_strip_all_tags($p->get_price_html());
+
+            $items[] = [
+                'id'             => $p->get_id(),
+                'name'           => $p->get_name(),
+                'price'          => $price_clean,
+                'permalink'      => $p->get_permalink(),
+                'image'          => $image_url,
+                'in_stock'       => $p->is_in_stock(),
+                'stock_badge'    => $p->is_in_stock() ? __('In Stock', 'wp-ai-chatbot') : __('Out of Stock', 'wp-ai-chatbot'),
+                'is_purchasable' => $p->is_purchasable() && $p->is_in_stock(),
+                'type'           => $p->get_type(),
+                'rating'         => floatval($p->get_average_rating()),
+                'rating_count'   => intval($p->get_rating_count()),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Check WooCommerce order details and generate visual WISMO tracking data
+     *
+     * @param string $message
+     * @return array|null
+     */
+    public function get_order_tracking_data($message) {
+        if (!function_exists('wc_get_order') || empty($this->settings['enable_wc_order_lookup']) || empty($this->settings['enable_wc_order_stepper'])) {
+            return null;
+        }
+
+        if (preg_match('/\b(?:order\s*#?|#)\s*([0-9]{2,8})\b/i', $message, $matches)) {
+            $order_id = intval($matches[1]);
+            $order = wc_get_order($order_id);
+
+            if ($order) {
+                $status = $order->get_status();
+                $status_label = wc_get_order_status_name($status);
+                $total = html_entity_decode(wp_strip_all_tags($order->get_formatted_order_total()));
+                $date_created = $order->get_date_created() ? $order->get_date_created()->date_i18n(get_option('date_format', 'M j, Y')) : '';
+                $item_count = $order->get_item_count();
+
+                $items = [];
+                foreach ($order->get_items() as $item) {
+                    $items[] = [
+                        'name' => $item->get_name(),
+                        'qty'  => $item->get_quantity(),
+                    ];
+                }
+
+                $carrier = '';
+                $tracking_number = '';
+                $tracking_url = '';
+                $notes = $order->get_customer_order_notes();
+                if (!empty($notes)) {
+                    foreach ($notes as $n) {
+                        $content = $n->comment_content;
+                        if (preg_match('/(https?:\/\/[^\s]+)/i', $content, $url_matches)) {
+                            $tracking_url = esc_url_raw($url_matches[1]);
+                        }
+                        if (stripos($content, 'fedex') !== false) $carrier = 'FedEx';
+                        elseif (stripos($content, 'usps') !== false) $carrier = 'USPS';
+                        elseif (stripos($content, 'ups') !== false) $carrier = 'UPS';
+                        elseif (stripos($content, 'dhl') !== false) $carrier = 'DHL';
+
+                        if (preg_match('/\b([0-9A-Z]{9,30})\b/i', $content, $track_matches)) {
+                            $tracking_number = $track_matches[1];
+                        }
+                    }
+                }
+
+                // Normal progression: placed -> processing -> shipped (completed) -> delivered
+                $steps = [
+                    [
+                        'key'    => 'placed',
+                        'label'  => __('Order Placed', 'wp-ai-chatbot'),
+                        'state'  => 'completed',
+                        'date'   => $date_created,
+                    ],
+                    [
+                        'key'    => 'processing',
+                        'label'  => __('Processing', 'wp-ai-chatbot'),
+                        'state'  => in_array($status, ['processing', 'completed']) ? ($status === 'processing' ? 'active' : 'completed') : (in_array($status, ['cancelled', 'refunded', 'failed']) ? 'cancelled' : 'pending'),
+                        'date'   => ($status === 'processing') ? __('In Progress', 'wp-ai-chatbot') : '',
+                    ],
+                    [
+                        'key'    => 'shipped',
+                        'label'  => __('Shipped', 'wp-ai-chatbot'),
+                        'state'  => ($status === 'completed') ? 'completed' : (in_array($status, ['cancelled', 'refunded', 'failed']) ? 'cancelled' : 'pending'),
+                        'date'   => '',
+                    ],
+                    [
+                        'key'    => 'delivered',
+                        'label'  => __('Delivered', 'wp-ai-chatbot'),
+                        'state'  => ($status === 'completed') ? 'completed' : (in_array($status, ['cancelled', 'refunded', 'failed']) ? 'cancelled' : 'pending'),
+                        'date'   => '',
+                    ],
+                ];
+
+                return [
+                    'order_id'        => $order_id,
+                    'status'          => $status,
+                    'status_label'    => $status_label,
+                    'total'           => $total,
+                    'date_created'    => $date_created,
+                    'item_count'      => $item_count,
+                    'items'           => $items,
+                    'shipping_method' => $order->get_shipping_method() ?: __('Standard Delivery', 'wp-ai-chatbot'),
+                    'carrier'         => $carrier,
+                    'tracking_number' => $tracking_number,
+                    'tracking_url'    => $tracking_url,
+                    'view_url'        => $order->get_view_order_url(),
+                    'steps'           => $steps,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Dispatch prompt to configured provider and handle lead capture
      */
     public function generate_response($message, $history = [], $page_context = []) {
@@ -320,9 +488,15 @@ class WP_AI_Chatbot_LLM_Service {
             }
         }
 
+        // Retrieve matching rich products and order tracking data
+        $products = $this->get_matching_products($message);
+        $order_tracking = $this->get_order_tracking_data($message);
+
         return [
             'reply'             => $reply,
             'handoff_triggered' => $handoff_triggered,
+            'products'          => $products,
+            'order_tracking'    => $order_tracking,
         ];
     }
 

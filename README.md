@@ -61,9 +61,12 @@ Your Agent Sidekick is now live on your site!
 - **Instant Team Alerts (Slack & Discord)**: Sends immediate webhook notifications to your team's Slack or Discord channel with visitor details and full chat transcripts when human intervention is requested.
 - **Current Page Context**: The bot automatically knows which page the visitor is currently browsing, enabling intelligent answers about specific services, products, or articles.
 - **Agency Lead Capture Mode**: Automatically detects when a visitor asks for a quote or consultation, politely collects their Name, Email, Phone number, and project notes, and sends an immediate email alert to the site owner (with a captured leads table in WP Admin).
-- **WooCommerce & E-Commerce Store Support**:
+- **WooCommerce & E-Commerce Store Support (DigitalGenius-Inspired)**:
+  - **Interactive Product Cards**: Visual product cards inside the chat bubble displaying product thumbnail, title, live price, stock status, and direct store link.
+  - **1-Click In-Chat "Add to Cart"**: Visitors can add products to their WooCommerce cart directly from chat without leaving the conversation, with automatic header/mini-cart fragment synchronization.
+  - **Visual WISMO Order Tracking Stepper**: Visual 4-stage tracking progress stepper (`Placed ➔ Processing ➔ Shipped ➔ Delivered`) for order queries (`"Where is my order #1234?"`), showing carrier links, order total, date, and receipt link.
+  - **Intelligent Return & Exchange Policy Guidance**: Automatic context-aware handling of returns, exchanges, damaged items, and refund questions.
   - Live product search with real-time prices, stock status, SKU, and direct store links.
-  - Automated order status lookup (`"Where is my order #1234?"`) with fulfillment status, tracking notes, and delivery guidelines.
 - **Site Learning (Native Mini-RAG)**: Automatically searches published WordPress Pages, Blog Posts, and WooCommerce Products for keywords matching the visitor's question, feeding relevant excerpts to the AI in real time.
 - **Business Knowledge & FAQs**: Train the bot on your exact business hours, return policies, store policies, or agency services.
 - **API Key Security**: The API key is stored securely in WordPress and is never exposed to visitors or client-side scripts.
@@ -78,7 +81,7 @@ Your Agent Sidekick is now live on your site!
 
 ```
 WP-Plugin_Chat/
-├── wp-ai-chatbot.zip                 # Ready-to-upload WordPress plugin file (v1.5.0)
+├── wp-ai-chatbot.zip                 # Ready-to-upload WordPress plugin file (v1.6.0)
 └── wp-ai-chatbot/                    # Plugin source files
     ├── wp-ai-chatbot.php             # Main plugin entry & asset loader
     ├── includes/

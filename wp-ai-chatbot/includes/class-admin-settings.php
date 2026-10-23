@@ -96,7 +96,9 @@ class WP_AI_Chatbot_Admin_Settings {
             'enable_lead_capture'     => 1,
             'lead_notification_email' => get_option('admin_email'),
             'enable_wc_product_search'=> 1,
+            'enable_wc_rich_cards'    => 1,
             'enable_wc_order_lookup'  => 1,
+            'enable_wc_order_stepper' => 1,
             'enable_human_handoff'    => 1,
             'handoff_channel'         => 'calendly',
             'handoff_target'          => '',
@@ -131,7 +133,9 @@ class WP_AI_Chatbot_Admin_Settings {
         $clean['enable_lead_capture']      = !empty($input['enable_lead_capture']) ? 1 : 0;
         $clean['lead_notification_email']  = sanitize_email($input['lead_notification_email'] ?? get_option('admin_email'));
         $clean['enable_wc_product_search'] = !empty($input['enable_wc_product_search']) ? 1 : 0;
+        $clean['enable_wc_rich_cards']     = !empty($input['enable_wc_rich_cards']) ? 1 : 0;
         $clean['enable_wc_order_lookup']   = !empty($input['enable_wc_order_lookup']) ? 1 : 0;
+        $clean['enable_wc_order_stepper']  = !empty($input['enable_wc_order_stepper']) ? 1 : 0;
         $clean['enable_human_handoff']     = !empty($input['enable_human_handoff']) ? 1 : 0;
         $clean['handoff_channel']          = in_array($input['handoff_channel'] ?? '', ['calendly', 'telegram', 'whatsapp', 'sms', 'phone', 'custom', 'email']) ? $input['handoff_channel'] : 'calendly';
         $clean['handoff_target']           = sanitize_text_field($input['handoff_target'] ?? '');
@@ -357,6 +361,16 @@ class WP_AI_Chatbot_Admin_Settings {
                             </td>
                         </tr>
                         <tr>
+                            <th scope="row"><?php esc_html_e('Interactive Product Cards', 'wp-ai-chatbot'); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[enable_wc_rich_cards]" value="1" <?php checked($settings['enable_wc_rich_cards'] ?? 1, 1); ?> />
+                                    <strong><?php esc_html_e('Display rich product cards with 1-click "Add to Cart" (DigitalGenius style)', 'wp-ai-chatbot'); ?></strong>
+                                </label>
+                                <p class="description"><?php esc_html_e('Renders visual product cards directly inside the chat with thumbnail, live price, stock badge, and instant AJAX "Add to Cart" button.', 'wp-ai-chatbot'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th scope="row"><?php esc_html_e('Order Status Lookup', 'wp-ai-chatbot'); ?></th>
                             <td>
                                 <label>
@@ -364,6 +378,16 @@ class WP_AI_Chatbot_Admin_Settings {
                                     <strong><?php esc_html_e('Enable automated order lookup ("Where is my order #1234?")', 'wp-ai-chatbot'); ?></strong>
                                 </label>
                                 <p class="description"><?php esc_html_e('When a customer provides their order number, the bot checks WooCommerce in real time to report shipping and fulfillment status.', 'wp-ai-chatbot'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e('Visual WISMO Stepper', 'wp-ai-chatbot'); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="<?php echo self::OPTION_NAME; ?>[enable_wc_order_stepper]" value="1" <?php checked($settings['enable_wc_order_stepper'] ?? 1, 1); ?> />
+                                    <strong><?php esc_html_e('Display visual shipping timeline stepper (Placed ➔ Processing ➔ Shipped ➔ Delivered)', 'wp-ai-chatbot'); ?></strong>
+                                </label>
+                                <p class="description"><?php esc_html_e('Displays a high-end visual progress bar with order total, item count, and 1-click carrier tracking link.', 'wp-ai-chatbot'); ?></p>
                             </td>
                         </tr>
                     </table>

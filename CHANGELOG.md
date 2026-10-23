@@ -5,6 +5,19 @@ All notable changes to the **WP AI Chatbot** plugin will be documented in this f
 - **MINOR** (`0.X.0`): New functionality, features, or integrations added in a backwards-compatible manner.
 - **PATCH** (`0.0.X`): Backwards-compatible bug fixes, model updates, or performance improvements.
 
+## [1.6.0] - 2026-10-23
+
+### Added
+- **DigitalGenius-Inspired E-Commerce Rich Cards**:
+  - **Interactive Product Cards**: Displays visual product cards inside the chat with thumbnail images, live pricing, stock availability badges, and star ratings.
+  - **1-Click Native AJAX "Add to Cart"**: Shoppers can add items to their WooCommerce cart directly from the chat conversation with instant confirmation and automatic site-wide mini-cart updates.
+  - **Visual WISMO Order Tracking Stepper**: Replaces plain text status with a visual 4-stage delivery pipeline (`Placed ➔ Processing ➔ Shipped ➔ Delivered`), total cost, and direct carrier tracking links (FedEx, USPS, UPS, DHL).
+  - **Self-Service Returns & Exchanges Intent Engine**: Integrated DigitalGenius-style conversational flows for returns, size exchanges, and damaged items.
+  - **New WooCommerce Settings**: Added toggles for Interactive Product Cards and Visual Order Steppers under **Agent Sidekick ➔ Settings ➔ Section 4**.
+  - **Dedicated Add-to-Cart REST Route**: Added `/wp-json/wp-ai-chatbot/v1/add-to-cart` ensuring fast and reliable cart session handling across all themes.
+
+---
+
 ## [1.5.0] - 2026-10-01
 
 ### Changed
