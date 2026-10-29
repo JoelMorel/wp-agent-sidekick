@@ -1,12 +1,13 @@
 <?php
 /**
- * Plugin Name:       WP Agent Sidekick
+ * Plugin Name:       Agent Sidekick – AI Assistant & Chatbot for WordPress
  * Plugin URI:        https://morelmedia.org
  * Description:       Lightweight, standalone AI Agent & Assistant for WordPress. Connects directly to Google Gemini, OpenAI, Groq, or an n8n webhook—no external server required.
  * Version:           1.6.0
  * Author:            Morel Media
  * Author URI:        https://morelmedia.org
  * License:           GPL-2.0+
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       wp-ai-chatbot
  * Requires at least: 5.8
  * Requires PHP:      7.4

@@ -1,4 +1,4 @@
-# WP Agent Sidekick 🦸‍♂️🤖
+# Agent Sidekick 🦸‍♂️🤖
 
 A lightweight, modern, standalone AI Agent & Assistant for WordPress. **No external Vercel server or coding required.**
 
@@ -83,6 +83,7 @@ Your Agent Sidekick is now live on your site!
 WP-Plugin_Chat/
 ├── wp-ai-chatbot.zip                 # Ready-to-upload WordPress plugin file (v1.6.0)
 └── wp-ai-chatbot/                    # Plugin source files
+    ├── readme.txt                    # WordPress.org standard plugin directory documentation
     ├── wp-ai-chatbot.php             # Main plugin entry & asset loader
     ├── includes/
     │   ├── class-llm-service.php     # Direct API calls (Gemini, OpenAI, Groq, n8n) & Context Engine

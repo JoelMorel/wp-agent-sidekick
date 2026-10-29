@@ -398,13 +398,17 @@ class WP_AI_Chatbot_API_Handler {
             'HTTP_CF_CONNECTING_IP',
             'HTTP_X_FORWARDED_FOR',
             'HTTP_CLIENT_IP',
-            'REMOTE_ADDR'
+            'REMOTE_ADDR',
         ];
 
         foreach ($keys as $key) {
             if (!empty($_SERVER[$key])) {
-                $ips = explode(',', $_SERVER[$key]);
-                return trim($ips[0]);
+                $raw_ip = sanitize_text_field(wp_unslash($_SERVER[$key]));
+                $ips = explode(',', $raw_ip);
+                $ip = trim($ips[0]);
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
             }
         }
 

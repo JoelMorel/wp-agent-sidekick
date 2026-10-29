@@ -22,7 +22,7 @@ class WP_AI_Chatbot_Admin_Settings {
     public function add_settings_page() {
         // Main Top-Level Menu in WordPress Admin Sidebar
         add_menu_page(
-            __('WP Agent Sidekick', 'wp-ai-chatbot'),
+            __('Agent Sidekick', 'wp-ai-chatbot'),
             __('Agent Sidekick', 'wp-ai-chatbot'),
             'manage_options',
             'wp-agent-sidekick',
@@ -53,7 +53,7 @@ class WP_AI_Chatbot_Admin_Settings {
 
         // Backward compatibility under Settings
         add_options_page(
-            __('WP Agent Sidekick Settings', 'wp-ai-chatbot'),
+            __('Agent Sidekick Settings', 'wp-ai-chatbot'),
             __('Agent Sidekick', 'wp-ai-chatbot'),
             'manage_options',
             'wp-ai-chatbot',
@@ -67,7 +67,7 @@ class WP_AI_Chatbot_Admin_Settings {
         }
         wp_add_dashboard_widget(
             'wp_agent_sidekick_dashboard_widget',
-            __('🤖 WP Agent Sidekick — Status & Overview', 'wp-ai-chatbot'),
+            __('🤖 Agent Sidekick — Status & Overview', 'wp-ai-chatbot'),
             [$this, 'render_dashboard_widget']
         );
     }
@@ -167,7 +167,7 @@ class WP_AI_Chatbot_Admin_Settings {
         <div class="wrap wp-ai-chat-settings-wrap">
             <h1 style="display: flex; align-items: center; gap: 8px;">
                 <span class="dashicons dashicons-superhero-alt" style="font-size: 30px; width: 30px; height: 30px;"></span>
-                <?php esc_html_e('WP Agent Sidekick Settings', 'wp-ai-chatbot'); ?>
+                <?php esc_html_e('Agent Sidekick Settings', 'wp-ai-chatbot'); ?>
                 <span style="font-size: 13px; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 12px; vertical-align: middle; font-weight: normal; margin-left: 6px;">v<?php echo esc_html(WP_AI_CHATBOT_VERSION); ?></span>
             </h1>
             <p class="description"><?php esc_html_e('Configure your AI Agent Sidekick. Connects directly to Google Gemini (free API), OpenAI, Groq, or your own n8n workflow.', 'wp-ai-chatbot'); ?></p>
@@ -795,7 +795,7 @@ class WP_AI_Chatbot_Admin_Settings {
         <div class="wrap wp-ai-chat-settings-wrap">
             <h1 style="display: flex; align-items: center; gap: 8px;">
                 <span class="dashicons dashicons-superhero-alt" style="font-size: 30px; width: 30px; height: 30px;"></span>
-                <?php esc_html_e('WP Agent Sidekick — Captured Leads', 'wp-ai-chatbot'); ?>
+                <?php esc_html_e('Agent Sidekick — Captured Leads', 'wp-ai-chatbot'); ?>
                 <span style="font-size: 13px; background: #e2e8f0; color: #475569; padding: 3px 8px; border-radius: 12px; vertical-align: middle; font-weight: normal; margin-left: 6px;">v<?php echo esc_html(WP_AI_CHATBOT_VERSION); ?></span>
             </h1>
             <p class="description"><?php esc_html_e('All visitor leads captured automatically by your Agent Sidekick.', 'wp-ai-chatbot'); ?></p>
